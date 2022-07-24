@@ -1,22 +1,22 @@
-from http.client import NO_CONTENT
-from random import randrange
-from signal import raise_signal
-from time import sleep, time
-from typing import Optional
-from xml.dom import NotFoundErr
-from fastapi import Body, FastAPI, Response, status, HTTPException
+from time import sleep
+from fastapi import Depends, FastAPI, Response, status, HTTPException
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from pydantic import BaseModel
+from . import models
+from sqlalchemy.orm import Session
+from .database import engine, get_db
+models.Base.metadata.create_all(bind=engine)
+
 
 app = FastAPI()
 
 
-my_posts = [
-    {"id": 1, "title": "Bangladesh", "content": "Bangladesh is my motherland"},
-    {"id": 2, "title": "Germany", "content": "This is where I want to go"},
-    {"id": 3, "title": "Denmark", "content": "This is the second item on my list"}
-]
+# my_posts = [
+#     {"id": 1, "title": "Bangladesh", "content": "Bangladesh is my motherland"},
+#     {"id": 2, "title": "Germany", "content": "This is where I want to go"},
+#     {"id": 3, "title": "Denmark", "content": "This is the second item on my list"}
+# ]
 
 
 class Post(BaseModel):
@@ -37,16 +37,16 @@ while True:
         sleep(2)
 
 
-def find_post(id):
-    for p in my_posts:
-        if p["id"] == id:
-            return p
+# def find_post(id):
+#     for p in my_posts:
+#         if p["id"] == id:
+#             return p
 
 
-def find_index(id):
-    for i, p in enumerate(my_posts):
-        if p["id"] == id:
-            return i
+# def find_index(id):
+#     for i, p in enumerate(my_posts):
+#         if p["id"] == id:
+#             return i
 
 
 @app.get("/posts")
@@ -54,6 +54,11 @@ def get_posts():
     cursor.execute("""SELECT * FROM posts;""")
     posts = cursor.fetchall()
     return {"data": posts}
+
+
+@app.get("/alchemy")
+def get_posts(db: Session = Depends(get_db)):
+    return {"data": "successful"}
 
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
